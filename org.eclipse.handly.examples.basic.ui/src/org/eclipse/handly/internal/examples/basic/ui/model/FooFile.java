@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2015 1C-Soft LLC and others.
+ * Copyright (c) 2014, 2016 1C-Soft LLC and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,9 +26,8 @@ import org.eclipse.handly.examples.basic.ui.model.IFooDef;
 import org.eclipse.handly.examples.basic.ui.model.IFooFile;
 import org.eclipse.handly.examples.basic.ui.model.IFooVar;
 import org.eclipse.handly.internal.examples.basic.ui.Activator;
-import org.eclipse.handly.model.IHandle;
-import org.eclipse.handly.model.impl.Body;
-import org.eclipse.handly.model.impl.HandleManager;
+import org.eclipse.handly.model.IElement;
+import org.eclipse.handly.model.impl.ElementManager;
 import org.eclipse.handly.model.impl.SourceElementBody;
 import org.eclipse.handly.model.impl.SourceFile;
 import org.eclipse.xtext.parser.IParseResult;
@@ -86,8 +85,8 @@ public class FooFile
     }
 
     @Override
-    protected void buildStructure(SourceElementBody body,
-        Map<IHandle, Body> newElements, Object ast, String source,
+    protected void hBuildStructure(SourceElementBody body,
+        Map<IElement, Object> newElements, Object ast, String source,
         IProgressMonitor monitor)
     {
         XtextResource resource = (XtextResource)ast;
@@ -115,7 +114,7 @@ public class FooFile
      * @throws CoreException if resource loading failed
      */
     @Override
-    protected Object createStructuralAst(String source,
+    protected Object hCreateStructuralAst(String source,
         IProgressMonitor monitor) throws CoreException
     {
         try
@@ -186,8 +185,8 @@ public class FooFile
     }
 
     @Override
-    protected HandleManager getHandleManager()
+    protected ElementManager hElementManager()
     {
-        return FooModelManager.INSTANCE.getHandleManager();
+        return FooModelManager.INSTANCE.getElementManager();
     }
 }

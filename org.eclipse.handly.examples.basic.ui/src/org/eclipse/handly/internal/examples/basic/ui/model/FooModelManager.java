@@ -13,15 +13,11 @@ package org.eclipse.handly.internal.examples.basic.ui.model;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.ISafeRunnable;
-import org.eclipse.core.runtime.ListenerList;
-import org.eclipse.core.runtime.SafeRunner;
-import org.eclipse.handly.examples.basic.ui.model.IFooModel;
 import org.eclipse.handly.internal.examples.basic.ui.Activator;
-import org.eclipse.handly.model.IElementChangeEvent;
-import org.eclipse.handly.model.IElementChangeListener;
 import org.eclipse.handly.model.impl.ElementChangeEvent;
 import org.eclipse.handly.model.impl.ElementManager;
+import org.eclipse.handly.model.impl.IModelManager;
+import org.eclipse.handly.model.impl.NotificationManager;
 
 /**
  * The manager for the Foo Model. 
@@ -29,22 +25,22 @@ import org.eclipse.handly.model.impl.ElementManager;
  * @threadsafe This class is intended to be thread-safe
  */
 public class FooModelManager
-    implements IResourceChangeListener
+    implements IModelManager, IResourceChangeListener
 {
     /**
      * The sole instance of the manager. 
      */
     public static final FooModelManager INSTANCE = new FooModelManager();
 
-    private IFooModel fooModel;
+    private FooModel fooModel;
     private ElementManager elementManager;
-    private ListenerList<IElementChangeListener> listeners;
+    private NotificationManager notificationManager;
 
     public void startup() throws Exception
     {
         fooModel = new FooModel();
         elementManager = new ElementManager(new FooModelCache());
-        listeners = new ListenerList<>();
+        notificationManager = new NotificationManager();
         fooModel.getWorkspace().addResourceChangeListener(this,
             IResourceChangeEvent.POST_CHANGE);
     }
@@ -52,7 +48,7 @@ public class FooModelManager
     public void shutdown() throws Exception
     {
         fooModel.getWorkspace().removeResourceChangeListener(this);
-        listeners = null;
+        notificationManager = null;
         elementManager = null;
         fooModel = null;
     }
@@ -60,8 +56,6 @@ public class FooModelManager
     @Override
     public void resourceChanged(IResourceChangeEvent event)
     {
-        if (event.getType() != IResourceChangeEvent.POST_CHANGE)
-            return;
         FooDeltaProcessor deltaProcessor = new FooDeltaProcessor();
         try
         {
@@ -73,18 +67,21 @@ public class FooModelManager
         }
         if (!deltaProcessor.isEmptyDelta())
         {
-            fireElementChangeEvent(new ElementChangeEvent(
-                ElementChangeEvent.POST_CHANGE, deltaProcessor.getDelta()));
+            getNotificationManager().fireElementChangeEvent(
+                new ElementChangeEvent(ElementChangeEvent.POST_CHANGE,
+                    deltaProcessor.getDelta()));
         }
     }
 
-    public IFooModel getFooModel()
+    @Override
+    public FooModel getModel()
     {
         if (fooModel == null)
             throw new IllegalStateException();
         return fooModel;
     }
 
+    @Override
     public ElementManager getElementManager()
     {
         if (elementManager == null)
@@ -92,39 +89,11 @@ public class FooModelManager
         return elementManager;
     }
 
-    public void addElementChangeListener(IElementChangeListener listener)
+    public NotificationManager getNotificationManager()
     {
-        if (listeners == null)
+        if (notificationManager == null)
             throw new IllegalStateException();
-        listeners.add(listener);
-    }
-
-    public void removeElementChangeListener(IElementChangeListener listener)
-    {
-        if (listeners == null)
-            throw new IllegalStateException();
-        listeners.remove(listener);
-    }
-
-    public void fireElementChangeEvent(final IElementChangeEvent event)
-    {
-        if (listeners == null)
-            throw new IllegalStateException();
-        for (IElementChangeListener listener : listeners)
-        {
-            SafeRunner.run(new ISafeRunnable()
-            {
-                public void handleException(Throwable exception)
-                {
-                    // already logged by Platform
-                }
-
-                public void run() throws Exception
-                {
-                    listener.elementChanged(event);
-                }
-            });
-        }
+        return notificationManager;
     }
 
     private FooModelManager()
